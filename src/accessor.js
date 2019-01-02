@@ -89,7 +89,7 @@ var Accessor = function(config, single, plural){
   case 'organization':
     selectedMethods = {
       ...methods,
-      forUserId(userId) {
+      forUserId(userId, params=undefined) {
         return new Promise(function(fufill, reject){
           var urlParams = params ? '?' + params : '';
           zdrequest.get('/users/' + userId + '/tickets.json' + urlParams).then(function(data){
