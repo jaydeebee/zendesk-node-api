@@ -84,10 +84,35 @@ var Accessor = function(config, single, plural){
     }
   }
 
-  if(single !== 'tag') {
-    selectedMethods = methods;
-  } else {
+  switch(single) {
+  case 'ticket':
+  case 'organization':
+    selectedMethods = {
+      ...methods,
+      forUserId(userId) {
+        return new Promise(function(fufill, reject){
+          var urlParams = params ? '?' + params : '';
+          zdrequest.get('/users/' + userId + '/tickets.json' + urlParams).then(function(data){
+            fufill(data[plural])
+          }).catch(function(err){
+            reject(err)
+          })
+        })
+      }
+    };
+    break;
+
+  case 'tag':
     selectedMethods.list = methods.list;
+    selectedMethods.getTags = function(targetObjectPlural, id){
+      return new Promise(function(fufill, reject){
+        zdrequest.put('/' + targetObjectPlural + '/' + id + '/' + plural + '.json', createData).then(function(data){
+          fufill(data.tags || [])
+        }).catch(function(err){
+          reject(err)
+        })
+      })
+    }
     selectedMethods.addTags = function(targetObjectPlural, id, data){
       var createData = {}
       createData[plural] = data;
@@ -99,22 +124,33 @@ var Accessor = function(config, single, plural){
         })
       })
     }
+    selectedMethods.forTicketId = selectedMethods.getTags.bind(selectedMethods.getTags, 'tickets')
+    selectedMethods.forOrganizationId = selectedMethods.getTags.bind(selectedMethods.getTags, 'organizations')
+    selectedMethods.forUserId = selectedMethods.getTags.bind(selectedMethods.getTags, 'users')
     selectedMethods.addTagsToTicket = selectedMethods.addTags.bind(selectedMethods.addTags, 'tickets')
     selectedMethods.addTagsToOrganization = selectedMethods.addTags.bind(selectedMethods.addTags, 'organizations')
     selectedMethods.addTagsToUser = selectedMethods.addTags.bind(selectedMethods.addTags, 'users')
-  }
+    break;
 
-  if(single === 'view') {
-    selectedMethods.tickets = function(id, params){
-      return new Promise(function(fufill, reject){
-        var urlParams = params ? '?' + params : '';
-        zdrequest.get('/' + plural + '/' + id + '/tickets.json' + urlParams).then(function(data){
-          fufill(data.tickets)
-        }).catch(function(err){
-          reject(err)
+  case 'view':
+    selectedMethods = {
+      ...methods,
+      tickets: function(id, params) {
+        return new Promise(function(fufill, reject){
+          var urlParams = params ? '?' + params : '';
+          zdrequest.get('/' + plural + '/' + id + '/tickets.json' + urlParams).then(function(data){
+            fufill(data.tickets)
+          }).catch(function(err){
+            reject(err)
+          })
         })
-      })
-    }
+      }
+    };
+    break;
+
+  default:
+    selectedMethods = methods;
+    break;
   }
 
   return selectedMethods;
