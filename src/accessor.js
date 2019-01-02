@@ -92,7 +92,7 @@ var Accessor = function(config, single, plural){
       forUserId(userId, params=undefined) {
         return new Promise(function(fufill, reject){
           var urlParams = params ? '?' + params : '';
-          zdrequest.get('/users/' + userId + '/tickets.json' + urlParams).then(function(data){
+          zdrequest.get('/users/' + userId + '/tickets/requested.json' + urlParams).then(function(data){
             fufill(data[plural])
           }).catch(function(err){
             reject(err)
